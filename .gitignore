@@ -1,0 +1,12 @@
+# Build-Ausgaben
+bin/
+obj/
+
+# Fertige EXE/ZIP kommen als GitHub-Release, nicht ins Repository
+release/*.exe
+release/*.zip
+
+# Werkzeug-Arbeitsdateien
+.taste-skill/
+*.user
+.vs/

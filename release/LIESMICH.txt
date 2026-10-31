@@ -1,0 +1,28 @@
+DWNO Evo-Helfer – Digitations-Helfer für Digimon World: Next Order (Steam, Windows)
+====================================================================================
+
+DEUTSCH
+1. Spiel beenden.
+2. DWNO-Evo-Helfer.exe starten.
+   Falls "Windows hat den PC geschützt" erscheint: "Weitere Informationen" -> "Trotzdem ausführen"
+   (die EXE ist nicht signiert).
+3. Im Fenster "Einrichtung" auf "Installieren" klicken. Das lädt den Mod-Loader BepInEx
+   (offizielle Version) in den Spielordner und legt das Plugin dazu.
+4. Spiel starten (der erste Start dauert 1-3 Minuten länger) und Spielstand laden.
+   Die App zeigt jetzt live deine Partner, welche Digitationen möglich sind und was noch fehlt.
+   Die Digimon-Bilder werden beim ersten Start aus deinem eigenen Spiel erzeugt.
+
+Digidex: Oben auf "Digidex" umschalten – alle Digimon mit Bild, Stufe und den nötigen Werten.
+Ein Klick zeigt Details: woraus es entsteht, wozu es digitiert, Vergleich mit deinem Partner
+und den Weg dorthin. Der Digidex funktioniert auch ohne Spiel/Plugin.
+
+Tipps: 📌 = immer im Vordergrund, 100% = Deckkraft, ⚙ = Einrichtung/Plugin entfernen.
+Funktioniert über dem Spiel nur im Fenster- oder randlosen Modus, nicht im exklusiven Vollbild.
+Entfernen: ⚙ -> "Plugin entfernen". BepInEx ganz entfernen: im Spielordner den Ordner BepInEx
+und die Datei winhttp.dll löschen.
+
+ENGLISH
+1. Close the game.
+2. Run DWNO-Evo-Helfer.exe ("Windows protected your PC" -> "More info" -> "Run anyway").
+3. Click "Install" in the setup screen (downloads the official BepInEx mod loader into the game folder).
+4. Start the game and load your save. The app follows the game language automatically.

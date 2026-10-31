@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- .NET Framework 4.8 ist auf jedem Windows 10/11 vorinstalliert → eine einzelne EXE ohne Zusatzinstallation -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AssemblyName>DWNO-Evo-Helfer</AssemblyName>
+    <RootNamespace>DwnoEvoHelper</RootNamespace>
+    <Version>1.5.0</Version>
+    <ApplicationIcon>icon.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <DebugType>none</DebugType>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.IO.Compression.FileSystem" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Resource Include="icon.ico" />
+    <Resource Include="Fonts\*.ttf" />
+    <!-- Das Spiel-Plugin steckt in der EXE und wird beim Einrichten in den Spielordner kopiert -->
+    <EmbeddedResource Include="..\plugin\bin\out\DWNO_EvoHelfer.dll" LogicalName="DWNO_EvoHelfer.dll" />
+    <!-- Digimon-Bilder (128 px) und Digimon-Tabelle für Digidex/Planen ohne Spielstart -->
+    <EmbeddedResource Include="Resources\icons.zip" LogicalName="icons.zip" />
+    <EmbeddedResource Include="Resources\gamedata.json" LogicalName="gamedata.json" />
+  </ItemGroup>
+
+</Project>
