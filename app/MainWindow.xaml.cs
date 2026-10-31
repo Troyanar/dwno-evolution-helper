@@ -24,10 +24,11 @@ public partial class MainWindow : Window
         [DataMember] public double Height { get; set; } = 760;
         [DataMember] public bool Topmost { get; set; } = true;
         [DataMember] public double Opacity { get; set; } = 1;
-        [DataMember] public string? Goal { get; set; }      // alt (v1.1): Ziel für Partner 1
-        [DataMember] public string?[]? Goals { get; set; }  // Ziel je Partner
-        [DataMember] public int Partner { get; set; }        // 0, 1 oder 2 = beide
+        [DataMember] public string? Goal { get; set; }      // old (v1.1): goal for partner 1
+        [DataMember] public string?[]? Goals { get; set; }  // goal per partner
+        [DataMember] public int Partner { get; set; }        // 0, 1 or 2 = both
         [DataMember] public string? GameDir { get; set; }
+        [DataMember] public string? Language { get; set; }   // "en" (default), "auto" or a language code
     }
 
     static readonly string SettingsPath = Path.Combine(GameFiles.Dir, "app-settings.json");
@@ -54,7 +55,7 @@ public partial class MainWindow : Window
         Loaded += (_, _) =>
         {
             Refresh();
-            // Beim ersten Start oder veraltetem Plugin direkt die Einrichtung zeigen
+            // On first start or with an outdated plugin, show setup right away
             if (NeedsSetup()) ShowSetup(true);
             _timer.Start();
         };
@@ -62,7 +63,7 @@ public partial class MainWindow : Window
         SourceInitialized += (_, _) => InitHotkeys();
         Loaded += async (_, _) =>
         {
-            // Neuere Version auf GitHub?
+            // Newer version on GitHub?
             if (await Updates.CheckAsync() is Version v)
             {
                 UpdateButton.Content = Loc.F("update.available", $"{v.Major}.{v.Minor}.{Math.Max(v.Build, 0)}");
@@ -71,7 +72,7 @@ public partial class MainWindow : Window
         };
     }
 
-    // ---------- Daten laden ----------
+    // ---------- Load data ----------
 
     void Refresh()
     {
@@ -83,7 +84,7 @@ public partial class MainWindow : Window
             _dataStamp = stamp;
             if (_data != before)
             {
-                // Neue Tabelle (z. B. andere Spielsprache) → Digidex neu aufbauen
+                // New table (e.g. different game language) → rebuild the Digidex
                 BuildStageFilters();
                 RenderDexList();
             }
@@ -93,8 +94,12 @@ public partial class MainWindow : Window
         if (_live != null && GameRunning() && GameFresh()) Trainer.Observe(_live, DateTime.Now);
         if (_logMode) RenderLog();
 
-        // Sprache folgt dem Spiel
-        if (Loc.Set(_live?.Lang ?? _data?.Lang)) ApplyTexts();
+        // Language follows the game
+        if (Loc.Set(_live?.Lang ?? _data?.Lang))
+        {
+            _data?.ApplyNames();
+            ApplyTexts();
+        }
         Render();
     }
 
@@ -105,11 +110,11 @@ public partial class MainWindow : Window
         catch { return false; }
     }
 
-    /// Das Spiel hält im Hintergrund an – dann kommen keine neuen Werte, es läuft aber noch.
+    /// The game pauses in the background – no new values arrive then, but it is still running.
     bool GameFresh() => _live != null && DateTime.Now - _live.Time < TimeSpan.FromSeconds(6);
 
-    /// Ältere Installationen: schwarzes BepInEx-Konsolenfenster nachträglich ausschalten
-    /// (wirkt ab dem nächsten Spielstart).
+    /// Older installations: turn off the black BepInEx console window retroactively
+    /// (takes effect from the next game start).
     void HideBepInExConsole()
     {
         try
@@ -120,14 +125,14 @@ public partial class MainWindow : Window
         }
         catch
         {
-            // nicht kritisch
+            // not critical
         }
     }
 
     bool NeedsSetup() =>
         _gameDir == null || Setup.BepInExState(_gameDir) != PartState.Installed || Setup.PluginState(_gameDir) != PartState.Installed;
 
-    // ---------- Einrichtung ----------
+    // ---------- Setup ----------
 
     void ShowSetup(bool show)
     {
@@ -233,14 +238,14 @@ public partial class MainWindow : Window
 
     void Update_Click(object sender, RoutedEventArgs e)
     {
-        try { Process.Start(Updates.ReleasesPage); } catch { /* kein Browser */ }
+        try { Process.Start(Updates.ReleasesPage); } catch { /* no browser */ }
     }
 
     void Settings_Click(object sender, RoutedEventArgs e) => ShowSetup(!_setupForced);
 
     void SetupClose_Click(object sender, RoutedEventArgs e) => ShowSetup(false);
 
-    // ---------- Fenster ----------
+    // ---------- Window ----------
 
     void TitleBar_MouseDown(object sender, MouseButtonEventArgs e)
     {
@@ -272,6 +277,8 @@ public partial class MainWindow : Window
     void LoadSettings()
     {
         _settings = Json.Read<Settings>(SettingsPath) ?? new Settings();
+        Loc.Choice = _settings.Language ?? "en";
+        Loc.Set(null);
         if (_settings.Width < MinWidth || _settings.Height < MinHeight) { _settings.Width = 440; _settings.Height = 760; }
 
         Width = _settings.Width;
@@ -296,7 +303,7 @@ public partial class MainWindow : Window
         _settings.Goal = null;
         PartnerPanels.ItemsSource = _panels;
         var tab = _settings.Partner switch { 1 => Tab1, 2 => TabBoth, _ => Tab0 };
-        if (_settings.Partner == 2) _widthBeforeBoth = 440; // „Beide“ war aktiv → beim Zurückschalten schmal
+        if (_settings.Partner == 2) _widthBeforeBoth = 440; // "Both" was active → narrow when switching back
         tab.IsChecked = true;
     }
 
@@ -315,7 +322,7 @@ public partial class MainWindow : Window
         }
         catch
         {
-            // Einstellungen sind nicht kritisch
+            // settings are not critical
         }
     }
 }

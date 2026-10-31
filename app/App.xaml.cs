@@ -13,9 +13,13 @@ public partial class App : Application
         base.OnStartup(e);
         var args = e.Args;
         int langAt = Array.IndexOf(args, "--lang");
-        if (langAt >= 0 && langAt + 1 < args.Length) Loc.Set(args[langAt + 1]);
+        if (langAt >= 0 && langAt + 1 < args.Length)
+        {
+            Loc.Choice = args[langAt + 1];
+            Loc.Set(null);
+        }
 
-        // Mit Admin-Rechten neu gestartet: nur den einen Schritt ausführen
+        // Restarted with admin rights: run only that one step
         if (args.Length >= 2 && (args[0] == "--install" || args[0] == "--remove"))
         {
             int code = 0;
@@ -37,7 +41,7 @@ public partial class App : Application
     }
 }
 
-/// Breite des Fortschrittsbalkens = Anteil × verfügbare Breite.
+/// Width of the progress bar = fraction × available width.
 public sealed class ProgressWidth : IMultiValueConverter
 {
     public static readonly ProgressWidth Instance = new();

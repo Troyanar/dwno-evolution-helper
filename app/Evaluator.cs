@@ -24,7 +24,7 @@ public sealed class Stat
     public string Value { get; set; } = "";
 }
 
-/// Digimon mit Bild (für Karten, Weg-Anzeige und Suchliste)
+/// Digimon with image (for cards, path display and search list)
 public class Pic
 {
     public uint Id { get; set; }
@@ -38,7 +38,7 @@ public class Pic
     public static Pic Of(GameDigimon d) => new() { Id = d.Id, Name = d.Name, Image = Icons.Get(d.Icon) };
 }
 
-/// Zeile im Digidex
+/// Row in the Digidex
 public sealed class DexRow : Pic
 {
     public string Stage { get; set; } = "";
@@ -59,18 +59,18 @@ public sealed class EvoCard : Pic
     public bool Ready { get; set; }
     public int Met { get; set; }
     public string Missing { get; set; } = "";
-    public string Fragile { get; set; } = "";       // erfüllte Bedingungen knapp an einer Grenze
+    public string Fragile { get; set; } = "";       // met conditions that are close to a limit
     public string PointsTooltip { get; set; } = "";
-    public string PriorityText { get; set; } = "";       // Priorität laut Spiel (EvolutionPoint)
+    public string PriorityText { get; set; } = "";       // priority according to the game (EvolutionPoint)
     public int? Priority { get; set; }
-    public bool KeyIsCurrent { get; set; }               // Schlüssel-Digimon = aktuelle Form des Partners
+    public bool KeyIsCurrent { get; set; }               // key Digimon = partner's current form
     public Visibility PriorityVisibility => PriorityText == "" ? Visibility.Collapsed : Visibility.Visible;
     public int Needed { get; set; }
     public Visibility HeaderVisibility { get; set; } = Visibility.Visible;
 }
 
-/// Wertet Digitationsbedingungen genauso aus wie das Spiel (PartnerCtrl.ComparisonEvolution):
-/// 999999 = keine Bedingung, Wert ≥ 0 = Mindestwert, Wert &lt; 0 = Höchstwert |Wert|.
+/// Evaluates evolution conditions exactly like the game (PartnerCtrl.ComparisonEvolution):
+/// 999999 = no condition, value ≥ 0 = minimum, value &lt; 0 = maximum |value|.
 public static class Evaluator
 {
     public const int NoCondition = 999999;
@@ -91,9 +91,9 @@ public static class Evaluator
 
     static string N(int v) => v.ToString("N0", Loc.Culture);
 
-    /// Baut die Karte für ein Ziel-Digimon.
-    /// liveCmp: Ergebnis der spieleigenen Prüfung pro Bedingung (falls vorhanden).
-    /// value == null: neutrale Anzeige (nur Anforderungen, ohne ✓/✗) – für den Digidex.
+    /// Builds the card for a target Digimon.
+    /// liveCmp: result of the game's own check per condition (if available).
+    /// value == null: neutral display (requirements only, without ✓/✗) – for the Digidex.
     public static EvoCard Build(GameData data, GameDigimon target, Func<string, int>? value,
         ICollection<uint> history, IDictionary<string, int>? liveCmp, bool firstReady)
     {
@@ -115,7 +115,7 @@ public static class Evaluator
             }
 
             string text, rule, state;
-            double gap; // relativer Abstand – zum Finden der "nächsten" Bedingung
+            double gap; // relative gap – for finding the "closest" condition
             if (req >= 0)
             {
                 text = $"{N(cur)} / {N(req)}";
@@ -177,7 +177,7 @@ public static class Evaluator
         };
     }
 
-    /// Nur die Anforderungen eines Digimon (ohne Vergleich mit einem Partner)
+    /// Only the requirements of a Digimon (without comparison to a partner)
     public static EvoCard Requirements(GameData data, GameDigimon target)
     {
         var chips = new List<Chip>();
@@ -209,7 +209,7 @@ public static class Evaluator
         };
     }
 
-    /// Kurzfassung der Anforderungen für die Digidex-Liste
+    /// Short summary of the requirements for the Digidex list
     public static string Summary(GameData data, GameDigimon d)
     {
         bool hasConditions = d.Evo.Any(e => e.Value != NoCondition) || d.Keys.Any(k => data[k] != null && GameData.IsValidName(data[k]!.Name));
@@ -236,7 +236,7 @@ public static class Evaluator
         Background = B("NeutralBg"),
     };
 
-    /// erfüllt = Grün-Paar; offen = neutral; über einem Höchstwert (muss gesenkt werden) = Rot-Paar
+    /// met = green pair; open = neutral; above a maximum (must be lowered) = red pair
     static Chip MakeChip(string label, string text, string tip, string shortText, bool met, bool overMax = false) => new()
     {
         Icon = met ? "✓" : "✗",

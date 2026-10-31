@@ -4,26 +4,26 @@ using System.Linq;
 
 namespace DwnoEvoHelper;
 
-/// Wann digitiert der Partner? Das Spiel prüft beim Tageswechsel (Alter +1).
-/// Die Alters-Fenster sind Richtwerte der Community (nicht aus den Spieldaten auslesbar):
-/// Champion ab Alter 4 (eigene Beobachtung), Ultra ca. 7–8, Mega ca. 10–11; Rookies ohne erfüllte Bedingung
-/// werden spätestens mit Alter 7 zu Numemon (STR > WIS) bzw. Geremon.
+/// When does the partner evolve? The game checks at the day change (age +1).
+/// The age windows are community guidelines (not readable from the game data):
+/// Champion from age 4 (own observation), Ultra approx. 7–8, Mega approx. 10–11; Rookies with no condition met
+/// become Numemon (STR > WIS) or Geremon at age 7 at the latest.
 public static class Timing
 {
     static readonly Dictionary<int, (int From, int To)> Window = new()
     {
-        [2] = (4, 4),   // Rookie → Champion (beobachtet: beide Partner erst mit Alter 4, obwohl vorher erfüllt)
+        [2] = (4, 4),   // Rookie → Champion (observed: both partners only at age 4, although met earlier)
         [3] = (7, 8),   // Champion → Ultra
         [4] = (10, 11), // Ultra → Mega
     };
 
     const int RookieDeadline = 7;
 
-    /// Minuten (Spielzeit) pro Tag
+    /// Minutes (game time) per day
     static double DayMinutes(WorldInfo? w) => (w?.HoursPerDay > 0 ? w.HoursPerDay : 24) * 60;
 
-    // Wie schnell läuft die Spieluhr? Gemessen aus den Live-Daten (Spielminuten pro echter Sekunde).
-    // Gemessen ~0,24; die Uhr steht in Menüs und Gesprächen, daher nur als "ca." verwendet.
+    // How fast does the game clock run? Measured from the live data (game minutes per real second).
+    // Measured ~0.24; the clock stops in menus and dialogues, so it is only used as "approx.".
     static double _rate;
     public static bool HasRate => _rate > 0.01;
     static double _lastGameMinute = -1;
@@ -33,7 +33,7 @@ public static class Timing
     {
         if (w == null) return;
         double m = w.TotalDay * DayMinutes(w) + w.Hour * 60 + w.Minute;
-        if (_lastGameMinute >= 0 && m == _lastGameMinute) return; // Uhr springt nur minutenweise: Basis halten
+        if (_lastGameMinute >= 0 && m == _lastGameMinute) return; // clock only advances in whole minutes: keep the baseline
 
         if (_lastGameMinute >= 0)
         {
@@ -45,7 +45,7 @@ public static class Timing
         _lastWall = stamp;
     }
 
-    /// Spielminuten bis zum nächsten Alterssprung (das Alter steigt täglich zur selben Spieluhrzeit).
+    /// Game minutes until the next age increase (age goes up daily at the same game-clock time).
     static double? MinutesToNextDay(LivePartner p, WorldInfo? w)
     {
         if (w == null || p.TimeFromAge < 0) return null;
@@ -53,7 +53,7 @@ public static class Timing
         return left < 0 || left > DayMinutes(w) ? null : left;
     }
 
-    /// "um 09:00 (ca. 1 h 38 min)" – Spieluhrzeit des nächsten Alterssprungs, dazu die geschätzte echte Zeit
+    /// "at 09:00 (approx. 1 h 38 min)" – game-clock time of the next age increase, plus the estimated real time
     static string? NextDayText(LivePartner p, WorldInfo? w)
     {
         if (MinutesToNextDay(p, w) is not double left) return null;
@@ -65,11 +65,11 @@ public static class Timing
             : Loc.F("timing.nextday", clock);
     }
 
-    /// Tage bis zum Beginn des nächsten Alters-Fensters (0 = schon erreicht), null bei Endstufe/Baby
+    /// Days until the next age window starts (0 = already reached), null for final stage/baby
     public static int? DaysUntilWindow(LivePartner p) =>
         Window.TryGetValue(p.Growth, out var win) ? Math.Max(0, win.From - p.Age) : (int?)null;
 
-    /// Verbleibende Lebenszeit in Tagen
+    /// Remaining lifetime in days
     public static double? LifeDays(LivePartner p, WorldInfo? w) =>
         p.Lifetime > 0 ? p.Lifetime / DayMinutes(w) : (double?)null;
 
@@ -101,7 +101,7 @@ public static class Timing
 
         if (next != null) parts.Add(next);
 
-        // Rookie ohne erfüllte Bedingung: Fehl-Digitation zum Stichtag
+        // Rookie with no condition met: failed evolution on the deadline
         if (p.Growth == 2 && !anyReady && p.Age < RookieDeadline)
         {
             var fallback = p.Value("str") > p.Value("wis") ? "Numemon" : "Geremon";

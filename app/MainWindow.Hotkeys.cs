@@ -5,9 +5,9 @@ using System.Windows.Interop;
 
 namespace DwnoEvoHelper;
 
-/// Globale Tastenkürzel (funktionieren auch, wenn das Spiel im Vordergrund ist):
-///   Strg+Umschalt+E  Fenster ein-/ausblenden
-///   Strg+Umschalt+D  Durchklick-Modus: Mausklicks gehen durch das Fenster hindurch ins Spiel
+/// Global hotkeys (also work while the game is in the foreground):
+///   Ctrl+Shift+E  show/hide the window
+///   Ctrl+Shift+D  click-through mode: mouse clicks pass through the window into the game
 public partial class MainWindow
 {
     const int HotkeyToggle = 0xE01, HotkeyClickThrough = 0xE02;
@@ -47,7 +47,7 @@ public partial class MainWindow
                 else
                 {
                     Show();
-                    if (Topmost) { Topmost = false; Topmost = true; } // nach dem Einblenden wieder ganz nach vorne
+                    if (Topmost) { Topmost = false; Topmost = true; } // bring back to the very front after showing
                 }
                 handled = true;
                 break;

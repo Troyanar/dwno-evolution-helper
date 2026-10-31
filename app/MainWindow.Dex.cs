@@ -6,11 +6,11 @@ using System.Windows.Controls;
 
 namespace DwnoEvoHelper;
 
-/// Digidex: alle Digimon mit ihren Digitationsbedingungen durchstöbern und Wege planen.
+/// Digidex: browse all Digimon with their evolution conditions and plan paths.
 public partial class MainWindow
 {
     bool _dexMode;
-    int? _dexStage;            // null = alle Stufen
+    int? _dexStage;            // null = all stages
     string _dexQuery = "";
     uint? _dexSelected;
     readonly Stack<uint> _dexHistory = new();
@@ -30,7 +30,7 @@ public partial class MainWindow
         RenderDexDetail();
     }
 
-    /// Partner-, Digidex- oder Einrichtungsansicht zeigen
+    /// Show the partner, Digidex or setup view
     void ApplyMode()
     {
         bool setup = SetupView.Visibility == Visibility.Visible;
@@ -156,13 +156,13 @@ public partial class MainWindow
         DexName.Text = d.Name;
         DexStage.Text = Evaluator.Stage(d.Growth);
 
-        // Vergleich mit dem gewählten Partner (falls Spieldaten vorhanden)
+        // Comparison with the selected partner (if game data is available)
         var partner = CurrentPartner();
         bool hasReq = d.Matches != Evaluator.NoCondition;
         DexCompare.Visibility = partner != null && hasReq ? Visibility.Visible : Visibility.Collapsed;
         if (partner != null)
         {
-            DexCompare.Content = Loc.F("dex.compare", partner.Name ?? "?");
+            DexCompare.Content = Loc.F("dex.compare", Nm(partner.Name));
             if (DexCompare.IsChecked == null) DexCompare.IsChecked = true;
         }
         bool compare = partner != null && hasReq && DexCompare.IsChecked == true;
@@ -172,7 +172,7 @@ public partial class MainWindow
         {
             compare ? Evaluator.Build(_data, d, partner!.Value, partner.HistorySet(), null, false) : Evaluator.Requirements(_data, d),
         };
-        DexReq.ItemsSource.OfType<EvoCard>().ToList().ForEach(c => c.HeaderVisibility = Visibility.Collapsed); // Name/Bild stehen schon darüber
+        DexReq.ItemsSource.OfType<EvoCard>().ToList().ForEach(c => c.HeaderVisibility = Visibility.Collapsed); // name/image are already shown above
 
         var from = _data.Predecessors(d.Name).Select(Pic.Of).ToList();
         DexFrom.ItemsSource = from;
@@ -184,13 +184,13 @@ public partial class MainWindow
         DexToEmpty.Text = Loc.T("dex.final");
         DexToEmpty.Visibility = to.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
 
-        // Weg vom aktuellen Partner
+        // Path from the current partner
         var me = partner != null ? _data[partner.Id] : null;
         bool showPath = me != null;
         DexPathTitle.Visibility = DexPathInfo.Visibility = DexPath.Visibility = showPath ? Visibility.Visible : Visibility.Collapsed;
         if (!showPath) return;
 
-        DexPathTitle.Text = Loc.F("dex.path", partner!.Name ?? "?");
+        DexPathTitle.Text = Loc.F("dex.path", Nm(partner!.Name));
         var path = _data.PathTo(me!, d.Name);
         if (path != null && path.Count > 1)
         {

@@ -8,7 +8,7 @@ using System.Windows.Media.Imaging;
 
 namespace DwnoEvoHelper;
 
-/// Digimon-Bilder, mitgeliefert in der EXE (Resources\icons.zip, 128 px, Name = Icon-Code wie "a001").
+/// Digimon images, shipped inside the EXE (Resources\icons.zip, 128 px, name = icon code like "a001").
 public static class Icons
 {
     static readonly Dictionary<string, ImageSource?> Cache = new();
@@ -42,7 +42,7 @@ public static class Icons
         }
         catch
         {
-            // fehlendes/defektes Bild → Platzhalter
+            // missing/broken image → placeholder
         }
         Cache[code!] = result;
         return result;

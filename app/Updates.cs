@@ -7,15 +7,15 @@ using System.Threading.Tasks;
 
 namespace DwnoEvoHelper;
 
-/// Prüft beim Start, ob auf GitHub eine neuere Version veröffentlicht ist.
+/// Checks at startup whether a newer version has been released on GitHub.
 public static class Updates
 {
-    public const string Repo = "Troyanar/dwno-evo-helfer";
+    public const string Repo = "Troyanar/dwno-evolution-helper";
     public static string ReleasesPage => $"https://github.com/{Repo}/releases/latest";
 
     public static Version Current => Assembly.GetExecutingAssembly().GetName().Version ?? new Version(0, 0);
 
-    /// Neuere Version (z. B. 1.6.0) oder null
+    /// Newer version (e.g. 1.6.0) or null
     public static async Task<Version?> CheckAsync()
     {
         if (Repo.StartsWith("OWNER/")) return null;
@@ -31,7 +31,7 @@ public static class Updates
         }
         catch
         {
-            return null; // offline o. ä. – kein Hinweis
+            return null; // offline or similar – no notice
         }
     }
 

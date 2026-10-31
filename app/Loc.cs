@@ -3,39 +3,48 @@ using System.Globalization;
 
 namespace DwnoEvoHelper;
 
-/// Texte der App in allen Spielsprachen. Die Sprache folgt dem Spiel (Plugin meldet den Code),
-/// sonst der Windows-Sprache. Reihenfolge der Spalten: de, en, fr, it, es, brp, jp, kr, tc.
+/// UI texts in all game languages. English is the default; the user can pick a fixed language
+/// or "auto" (follow the game language reported by the plugin).
+/// Column order: de, en, fr, it, es, brp, jp, kr, tc.
 public static class Loc
 {
     static readonly string[] Codes = { "de", "en", "fr", "it", "es", "brp", "jp", "kr", "tc" };
 
-    public static string Lang { get; private set; } = FromWindows();
+    /// Selectable languages (code, native name). "auto" follows the game.
+    public static readonly (string Code, string Name)[] Choices =
+    {
+        ("en", "English"), ("auto", "Auto"), ("de", "Deutsch"), ("fr", "Français"), ("it", "Italiano"),
+        ("es", "Español"), ("brp", "Português (BR)"), ("jp", "日本語"), ("kr", "한국어"), ("tc", "繁體中文"),
+    };
 
-    /// true, wenn sich die Sprache geändert hat
+    /// User setting: a language code or "auto"
+    public static string Choice { get; set; } = "en";
+
+    public static string Lang { get; private set; } = "en";
+
+    /// Applies the setting (and the game's language for "auto"). Returns true if the language changed.
     public static bool Set(string? gameCode)
     {
-        var code = Normalize(gameCode) ?? FromWindows();
+        var code = Choice == "auto" ? Normalize(gameCode) ?? "en" : Normalize(Choice) ?? "en";
         if (code == Lang) return false;
         Lang = code;
         return true;
     }
 
+    /// The game's German table uses German colour suffixes; show the English names in the English UI.
+    public static string DigimonName(string name, string? dataLang)
+    {
+        if (Lang != "en" || Normalize(dataLang) != "de") return name;
+        return name.Replace("(Schwarz)", "(Black)").Replace("(Blau)", "(Blue)").Replace("(Silber)", "(Silver)")
+                   .Replace("Phönixmon", "Phoenixmon").Replace("Toyagumon", "ToyAgumon");
+    }
+
     static string? Normalize(string? c)
     {
         if (string.IsNullOrEmpty(c)) return null;
-        c = c!.Trim().TrimStart('_').ToLowerInvariant(); // das Spiel meldet z. B. "_de"
+        c = c!.Trim().TrimStart('_').ToLowerInvariant(); // the game reports e.g. "_de"
         foreach (var code in Codes) if (c == code) return code;
         return c switch { "ja" => "jp", "ko" => "kr", "zh" or "zh-tw" or "sc" => "tc", "pt" or "pt-br" => "brp", _ => null };
-    }
-
-    static string FromWindows()
-    {
-        var c = CultureInfo.CurrentUICulture;
-        return c.TwoLetterISOLanguageName switch
-        {
-            "de" => "de", "fr" => "fr", "it" => "it", "es" => "es", "pt" => "brp",
-            "ja" => "jp", "ko" => "kr", "zh" => "tc", _ => "en",
-        };
     }
 
     public static string T(string key)
@@ -57,7 +66,7 @@ public static class Loc
     static readonly Dictionary<string, string[]> Texts = new()
     {
         // de, en, fr, it, es, brp, jp, kr, tc
-        ["title"] = new[] { "DWNO Evo-Helfer", "DWNO Evo Helper", "DWNO Assistant Évo", "DWNO Aiuto Evo", "DWNO Ayudante Evo", "DWNO Ajudante Evo", "DWNO 進化ヘルパー", "DWNO 진화 도우미", "DWNO 進化助手" },
+        ["title"] = new[] { "DWNO Evolution Helper", "DWNO Evolution Helper", "DWNO Evolution Helper", "DWNO Evolution Helper", "DWNO Evolution Helper", "DWNO Evolution Helper", "DWNO Evolution Helper", "DWNO Evolution Helper", "DWNO Evolution Helper" },
         ["st.live"] = new[] { "Live", "Live", "En direct", "Live", "En vivo", "Ao vivo", "ライブ", "실시간", "即時" },
         ["st.menu"] = new[] { "Im Menü", "In menu", "Au menu", "Nel menu", "En el menú", "No menu", "メニュー中", "메뉴", "選單中" },
         ["st.wait"] = new[] { "Warte auf Spiel", "Waiting for game", "En attente du jeu", "In attesa del gioco", "Esperando el juego", "Aguardando o jogo", "ゲーム待機中", "게임 대기 중", "等待遊戲" },
@@ -115,6 +124,9 @@ public static class Loc
         ["hk.clickthrough"] = new[] { "Durchklicken an · Strg+Umschalt+D", "Click-through on · Ctrl+Shift+D", "Clics traversants · Ctrl+Maj+D", "Clic passante · Ctrl+Maiusc+D", "Clic a través · Ctrl+Mayús+D", "Clique atravessa · Ctrl+Shift+D", "クリック透過中 · Ctrl+Shift+D", "클릭 통과 · Ctrl+Shift+D", "點擊穿透 · Ctrl+Shift+D" },
         ["hk.info"] = new[] { "Tastenkürzel (auch im Spiel): Strg+Umschalt+E blendet das Fenster ein/aus · Strg+Umschalt+D schaltet Durchklicken an/aus (Mausklicks gehen ins Spiel)", "Hotkeys (also in game): Ctrl+Shift+E shows/hides the window · Ctrl+Shift+D toggles click-through (clicks go to the game)", "Raccourcis (aussi en jeu) : Ctrl+Maj+E affiche/masque · Ctrl+Maj+D active les clics traversants", "Scorciatoie (anche in gioco): Ctrl+Maiusc+E mostra/nasconde · Ctrl+Maiusc+D clic passante", "Atajos (también en el juego): Ctrl+Mayús+E muestra/oculta · Ctrl+Mayús+D clic a través", "Atalhos (também no jogo): Ctrl+Shift+E mostra/oculta · Ctrl+Shift+D clique atravessa", "ショートカット（ゲーム中も可）：Ctrl+Shift+E 表示/非表示 · Ctrl+Shift+D クリック透過", "단축키(게임 중에도): Ctrl+Shift+E 표시/숨김 · Ctrl+Shift+D 클릭 통과", "快捷鍵（遊戲中亦可）：Ctrl+Shift+E 顯示/隱藏 · Ctrl+Shift+D 點擊穿透" },
         ["update.available"] = new[] { "Update {0} verfügbar", "Update {0} available", "Mise à jour {0} disponible", "Aggiornamento {0} disponibile", "Actualización {0} disponible", "Atualização {0} disponível", "更新 {0} あり", "업데이트 {0} 있음", "有新版本 {0}" },
+        ["lang.title"] = new[] { "Sprache", "Language", "Langue", "Lingua", "Idioma", "Idioma", "言語", "언어", "語言" },
+        ["lang.auto"] = new[] { "Auto = wie das Spiel", "Auto = same as the game", "Auto = comme le jeu", "Auto = come il gioco", "Auto = como el juego", "Auto = como o jogo", "自動＝ゲームと同じ", "자동 = 게임과 동일", "自動＝與遊戲相同" },
+        ["timing.tooltip"] = new[] { "Richtwerte aus der Community – das Spiel prüft die Digitation beim Tageswechsel.", "Community estimates – the game checks digivolution at the day change.", "Estimations de la communauté – le jeu vérifie au changement de jour.", "Stime della community – il gioco controlla al cambio di giorno.", "Estimaciones de la comunidad: el juego comprueba al cambiar el día.", "Estimativas da comunidade – o jogo verifica na virada do dia.", "コミュニティの目安 – 判定は日付変更時。", "커뮤니티 추정치 – 날짜가 바뀔 때 판정합니다.", "社群估計值 – 遊戲於換日時判定。" },
         ["both"] = new[] { "Beide", "Both", "Les deux", "Entrambi", "Ambos", "Ambos", "両方", "둘 다", "兩者" },
         ["age"] = new[] { "Alter {0}", "Age {0}", "Âge {0}", "Età {0}", "Edad {0}", "Idade {0}", "年齢 {0}", "나이 {0}", "年齡 {0}" },
         ["live"] = new[] { "live", "live", "en direct", "live", "en vivo", "ao vivo", "ライブ", "실시간", "即時" },
@@ -156,7 +168,7 @@ public static class Loc
         ["tip.min"] = new[] { "Minimieren", "Minimize", "Réduire", "Riduci", "Minimizar", "Minimizar", "最小化", "최소화", "最小化" },
         ["tip.close"] = new[] { "Schließen", "Close", "Fermer", "Chiudi", "Cerrar", "Fechar", "閉じる", "닫기", "關閉" },
 
-        // Digidex / Planen
+        // Digidex / planning
         ["mode.partner"] = new[] { "Partner", "Partners", "Partenaires", "Partner", "Compañeros", "Parceiros", "パートナー", "파트너", "夥伴" },
         ["mode.dex"] = new[] { "Digidex", "Digidex", "Digidex", "Digidex", "Digidex", "Digidex", "デジデックス", "디지덱스", "數碼圖鑑" },
         ["dex.search"] = new[] { "Im Digidex suchen …", "Search the Digidex …", "Chercher dans le Digidex …", "Cerca nel Digidex …", "Buscar en el Digidex …", "Buscar no Digidex …", "デジデックスを検索…", "디지덱스 검색…", "搜尋圖鑑…" },
@@ -175,7 +187,7 @@ public static class Loc
         ["dex.start"] = new[] { "Startform – entsteht aus dem Digi-Ei.", "Starting form – hatches from a Digi-Egg.", "Forme de départ – éclot d'un Digi-Œuf.", "Forma iniziale – nasce da un Digi-Uovo.", "Forma inicial: nace de un Digi-Huevo.", "Forma inicial – nasce de um Digi-Ovo.", "初期形態 – デジタマから誕生。", "시작 형태 – 디지알에서 태어남.", "初始形態 – 由數碼蛋孵化。" },
         ["dex.back"] = new[] { "Zurück", "Back", "Retour", "Indietro", "Atrás", "Voltar", "戻る", "뒤로", "返回" },
 
-        // Stufen
+        // Stages
         ["stage0"] = new[] { "Baby I", "Baby I", "Bébé I", "Primo stadio", "Bebé I", "Bebê I", "幼年期Ⅰ", "유년기 I", "幼年期Ⅰ" },
         ["stage1"] = new[] { "Baby II", "Baby II", "Bébé II", "Secondo stadio", "Bebé II", "Bebê II", "幼年期Ⅱ", "유년기 II", "幼年期Ⅱ" },
         ["stage2"] = new[] { "Rookie", "Rookie", "Disciple", "Intermedio", "Novato", "Novato", "成長期", "성장기", "成長期" },
@@ -184,7 +196,7 @@ public static class Loc
         ["stage5"] = new[] { "Mega", "Mega", "Méga", "Mega", "Mega", "Mega", "究極体", "궁극체", "究極體" },
         ["stage6"] = new[] { "Mega+", "Mega+", "Méga+", "Mega+", "Mega+", "Mega+", "究極体+", "궁극체+", "究極體+" },
 
-        // Einrichtung
+        // Setup
         ["setup.title"] = new[] { "Einrichtung", "Setup", "Installation", "Configurazione", "Configuración", "Configuração", "セットアップ", "설정", "設定" },
         ["setup.intro"] = new[] { "Damit die App deine Werte live sieht, kommt ein kleines Plugin ins Spiel. Dafür wird der Mod-Loader BepInEx (offizielle Version) in den Spielordner geladen.", "To read your values live, a small plugin is added to the game. This downloads the mod loader BepInEx (official build) into the game folder.", "Pour lire tes valeurs en direct, un petit plugin est ajouté au jeu. Le chargeur de mods BepInEx (version officielle) est téléchargé dans le dossier du jeu.", "Per leggere i valori in tempo reale viene aggiunto un piccolo plugin al gioco. Il mod loader BepInEx (versione ufficiale) viene scaricato nella cartella del gioco.", "Para leer tus valores en vivo se añade un pequeño plugin al juego. Se descarga el cargador de mods BepInEx (versión oficial) en la carpeta del juego.", "Para ler seus valores ao vivo, um pequeno plugin é adicionado ao jogo. O carregador de mods BepInEx (versão oficial) é baixado para a pasta do jogo.", "値をリアルタイムで読むため、小さなプラグインをゲームに追加します。MODローダー BepInEx（公式版）をゲームフォルダーにダウンロードします。", "실시간으로 값을 읽기 위해 작은 플러그인을 게임에 추가합니다. 모드 로더 BepInEx(공식 버전)를 게임 폴더에 내려받습니다.", "為了即時讀取數值，會在遊戲中加入一個小外掛，並把模組載入器 BepInEx（官方版本）下載到遊戲資料夾。" },
         ["setup.game"] = new[] { "Spiel", "Game", "Jeu", "Gioco", "Juego", "Jogo", "ゲーム", "게임", "遊戲" },

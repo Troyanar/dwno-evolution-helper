@@ -21,7 +21,7 @@ public sealed class LogEntryVm : Pic
     public List<LogLine> Verdicts { get; set; } = new();
 }
 
-/// Protokoll-Ansicht: jede Digitation mit dem Stand davor und welche Regel sie richtig vorhergesagt hätte.
+/// Log view: every evolution with the state before it and which rule would have predicted it correctly.
 public partial class MainWindow
 {
     bool _logMode;
@@ -42,7 +42,7 @@ public partial class MainWindow
         LogEmpty.Text = Loc.T("log.empty");
         LogEmpty.Visibility = results.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
 
-        // Bilanz je Regel – entscheidend sind die Fälle mit mehreren erfüllten Zielen
+        // Score per rule – what matters are the cases with several met targets
         var judged = results.Where(r => r.ReadyCount > 0).ToList();
         var multi = judged.Where(r => r.ReadyCount > 1).ToList();
         LogSummary.Text = Loc.F("log.count", results.Count, multi.Count);
@@ -104,6 +104,6 @@ public partial class MainWindow
     void OpenReport_Click(object sender, RoutedEventArgs e)
     {
         RenderLog(force: true);
-        try { System.Diagnostics.Process.Start(EvoLog.ReportPath); } catch { /* kein Standardprogramm */ }
+        try { System.Diagnostics.Process.Start(EvoLog.ReportPath); } catch { /* no default program */ }
     }
 }

@@ -3,12 +3,12 @@ using System.Linq;
 
 namespace DwnoEvoHelper;
 
-/// Mögliche Regeln, nach denen das Spiel bei mehreren erfüllten Zielen wählt.
-/// Welche stimmt, wird mit dem Digitations-Protokoll geprüft.
+/// Possible rules by which the game chooses when several targets are met.
+/// Which one is right is checked against the evolution log.
 public static class EvoRules
 {
-    /// Überschuss-Regel (aus Re:Digitize): meiste erfüllte Bedingungen über dem Soll,
-    /// dann aktuelles Digimon als Schlüssel, dann Priorität des Spiels, dann Listenreihenfolge.
+    /// Surplus rule (from Re:Digitize): most met conditions beyond the required number,
+    /// then current Digimon as key, then the game's priority, then list order.
     public static EvoCard? BySurplus(IReadOnlyList<EvoCard> cards) =>
         cards.Select((c, i) => (c, i)).Where(x => x.c.Ready)
             .OrderByDescending(x => x.c.Met - x.c.Needed)
@@ -17,14 +17,14 @@ public static class EvoRules
             .ThenBy(x => x.i)
             .Select(x => x.c).FirstOrDefault();
 
-    /// Höchste Priorität des Spiels (EvolutionPoint) unter den erfüllten Zielen
+    /// Highest game priority (EvolutionPoint) among the met targets
     public static EvoCard? ByPriority(IReadOnlyList<EvoCard> cards) =>
         cards.Select((c, i) => (c, i)).Where(x => x.c.Ready && x.c.Priority != null)
             .OrderByDescending(x => x.c.Priority).ThenBy(x => x.i)
             .Select(x => x.c).FirstOrDefault();
 
-    /// Ersatz, wenn kein Ziel voll erfüllt ist: am nächsten dran (größter Überschuss, auch negativ),
-    /// dann Priorität, dann Listenreihenfolge
+    /// Fallback when no target is fully met: the closest one (largest surplus, even if negative),
+    /// then priority, then list order
     public static EvoCard? ClosestFallback(IReadOnlyList<EvoCard> cards) =>
         cards.Select((c, i) => (c, i)).Where(x => x.c.Needed > 0)
             .OrderByDescending(x => x.c.Met - x.c.Needed)
@@ -32,10 +32,10 @@ public static class EvoRules
             .ThenBy(x => x.i)
             .Select(x => x.c).FirstOrDefault();
 
-    /// Erstes erfüllte Ziel in der Reihenfolge der Spieldaten
+    /// First met target in the order of the game data
     public static EvoCard? ByListOrder(IReadOnlyList<EvoCard> cards) => cards.FirstOrDefault(c => c.Ready);
 
-    /// Karten für alle Ziele eines Partners (Bedingungen, Priorität, Schlüssel = aktuelles Digimon)
+    /// Cards for all targets of a partner (conditions, priority, key = current Digimon)
     public static List<EvoCard> Cards(GameData data, LivePartner partner, bool useLiveCmp)
     {
         var me = data[partner.Id];

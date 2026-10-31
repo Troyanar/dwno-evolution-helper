@@ -5,8 +5,8 @@ using System.Windows;
 
 namespace DwnoEvoHelper;
 
-/// Anzeige eines Partners (Karte, nächste Digitationen, eigenes Ziel-Digimon).
-/// Bleibt pro Slot bestehen, damit das Suchfeld beim Live-Aktualisieren nicht neu aufgebaut wird.
+/// Display of one partner (card, next evolutions, own target Digimon).
+/// Persists per slot so the search box is not rebuilt during live updates.
 public sealed class PartnerVm : INotifyPropertyChanged
 {
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -53,6 +53,8 @@ public sealed class PartnerVm : INotifyPropertyChanged
     public string Warning { get => _warning; set { Set(ref _warning, value); Notify(nameof(WarningVisibility)); } }
     public Visibility WarningVisibility => _warning == "" ? Visibility.Collapsed : Visibility.Visible;
 
+    public string TimingTooltip => Loc.T("timing.tooltip");
+
     List<Stat> _stats = new();
     public List<Stat> Stats { get => _stats; set => Set(ref _stats, value); }
 
@@ -71,9 +73,9 @@ public sealed class PartnerVm : INotifyPropertyChanged
     Thickness _columnMargin;
     public Thickness ColumnMargin { get => _columnMargin; set => Set(ref _columnMargin, value); }
 
-    // ----- Ziel-Digimon -----
+    // ----- Target Digimon -----
 
-    /// Ausgewähltes Ziel (Digimon-Name) oder null
+    /// Selected target (Digimon name) or null
     public string? Goal { get; set; }
 
     string _query = "";

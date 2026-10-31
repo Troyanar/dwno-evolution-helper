@@ -7,7 +7,7 @@ using System.Text;
 
 namespace DwnoEvoHelper;
 
-/// Ein Eintrag aus evolog.jsonl: so sah der Partner direkt vor der Digitation aus (vom Plugin geschrieben).
+/// An entry from evolog.jsonl: what the partner looked like right before the evolution (written by the plugin).
 [DataContract]
 public sealed class EvoLogEntry
 {
@@ -18,13 +18,13 @@ public sealed class EvoLogEntry
     [DataMember(Name = "before")] public LivePartner? Before { get; set; }
 }
 
-/// Auswertung einer Digitation: was jede Regel vorhergesagt hätte und was wirklich passiert ist.
+/// Evaluation of an evolution: what each rule would have predicted and what actually happened.
 public sealed class EvoLogResult
 {
     public EvoLogEntry Entry = null!;
     public List<EvoCard> Cards = new();
     public int ReadyCount;
-    public string? Surplus, Priority, ListOrder, Choice, Fallback;   // vorhergesagte Namen
+    public string? Surplus, Priority, ListOrder, Choice, Fallback;   // predicted names
     public bool Matches(string? predicted) => predicted != null && predicted == Entry.To;
 }
 
@@ -59,6 +59,8 @@ public static class EvoLog
             e.Before.Evolutions ??= new();
             e.Before.History ??= new();
 
+            e.From = Loc.DigimonName(e.From ?? "?", data.Lang);
+            e.To = Loc.DigimonName(e.To ?? "?", data.Lang);
             var cards = EvoRules.Cards(data, e.Before, useLiveCmp: true);
             results.Add(new EvoLogResult
             {
@@ -75,34 +77,34 @@ public static class EvoLog
         return results;
     }
 
-    /// Lesbarer Bericht (für die Auswertung außerhalb der App)
+    /// Readable report (for analysis outside the app)
     public static void WriteReport(List<EvoLogResult> results)
     {
         var sb = new StringBuilder();
-        sb.AppendLine("DWNO Evo-Helfer – Digitations-Protokoll");
-        sb.AppendLine($"Stand {DateTime.Now:yyyy-MM-dd HH:mm}, {results.Count} Digitationen");
+        sb.AppendLine("Digimon World Next Order Evolution Helper – digivolution log");
+        sb.AppendLine($"As of {DateTime.Now:yyyy-MM-dd HH:mm}, {results.Count} digivolutions");
         sb.AppendLine();
         foreach (var (rule, pick) in Rules())
         {
             var judged = results.Where(r => r.ReadyCount > 0).ToList();
-            sb.AppendLine($"{rule,-28} {judged.Count(r => r.Matches(pick(r)))} von {judged.Count} richtig" +
-                          $" (bei mehreren erfüllten Zielen: {judged.Where(r => r.ReadyCount > 1).Count(r => r.Matches(pick(r)))} von {judged.Count(r => r.ReadyCount > 1)})");
+            sb.AppendLine($"{rule,-28} {judged.Count(r => r.Matches(pick(r)))} of {judged.Count} correct" +
+                          $" (with several targets met: {judged.Where(r => r.ReadyCount > 1).Count(r => r.Matches(pick(r)))} of {judged.Count(r => r.ReadyCount > 1)})");
         }
         var fb = results.Where(r => r.ReadyCount == 0).ToList();
-        sb.AppendLine($"{Loc.T("rule.fallback"),-28} {fb.Count(r => r.Matches(r.Fallback))} von {fb.Count} richtig (Fälle ohne erfülltes Ziel)");
+        sb.AppendLine($"{Loc.T("rule.fallback"),-28} {fb.Count(r => r.Matches(r.Fallback))} of {fb.Count} correct (cases with no target met)");
         sb.AppendLine();
         foreach (var r in results)
         {
             var p = r.Entry.Before!;
-            sb.AppendLine($"{r.Entry.TimeText}  {r.Entry.From} → {r.Entry.To}  (Alter {p.Age})");
+            sb.AppendLine($"{r.Entry.TimeText}  {r.Entry.From} → {r.Entry.To}  (age {p.Age})");
             foreach (var c in r.Cards)
                 sb.AppendLine($"    {(c.Name == r.Entry.To ? "→" : " ")} {c.Name,-28} {c.Met}/{c.Needed} ({c.Met - c.Needed:+0;-0;+0})" +
-                              $"  Prio {c.Priority?.ToString() ?? "–"}{(c.KeyIsCurrent ? "  Schlüssel=aktuell" : "")}");
-            sb.AppendLine($"    Überschuss: {r.Surplus ?? "–"} · Prio: {r.Priority ?? "–"} · Liste: {r.ListOrder ?? "–"} · Spiel kurz davor: {r.Choice ?? "–"} · Ersatz/am nächsten: {r.Fallback ?? "–"}");
-            sb.AppendLine("    Werte: " + string.Join(", ", p.Values.Select(v => $"{v.Key}={v.Value}")));
+                              $"  Prio {c.Priority?.ToString() ?? "–"}{(c.KeyIsCurrent ? "  key=current form" : "")}");
+            sb.AppendLine($"    Surplus: {r.Surplus ?? "–"} · Priority: {r.Priority ?? "–"} · List: {r.ListOrder ?? "–"} · Game pick just before: {r.Choice ?? "–"} · Fallback/closest: {r.Fallback ?? "–"}");
+            sb.AppendLine("    Values: " + string.Join(", ", p.Values.Select(v => $"{v.Key}={v.Value}")));
             sb.AppendLine();
         }
-        try { File.WriteAllText(ReportPath, sb.ToString(), Encoding.UTF8); } catch { /* nicht kritisch */ }
+        try { File.WriteAllText(ReportPath, sb.ToString(), Encoding.UTF8); } catch { /* not critical */ }
     }
 
     public static IEnumerable<(string Rule, Func<EvoLogResult, string?> Pick)> Rules()

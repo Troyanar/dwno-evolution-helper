@@ -4,18 +4,18 @@
              ShutdownMode="OnMainWindowClose">
     <Application.Resources>
         <!--
-            Stil "Data terminal" (tasteskill, seed 1732104878): neutrales Dunkel ohne Blaustich, Karten dunkler als der Grund,
-            Farbe nur auf Daten und Status. Jede Auswahl ist dieselbe 1-px-Akzentlinie unter ihrem Label.
+            Style "Data terminal" (tasteskill, seed 1732104878): neutral dark without a blue tint, cards darker than the ground,
+            colour only on data and status. Every selection is the same 1 px accent line under its label.
         -->
         <SolidColorBrush x:Key="Bg" Color="#171719"/>          <!-- ground -->
-        <SolidColorBrush x:Key="Panel" Color="#131217"/>       <!-- surface: Karten, dunkler als der Grund -->
-        <SolidColorBrush x:Key="PanelHi" Color="#212023"/>     <!-- raised: Bildkacheln, Hover, Spur -->
+        <SolidColorBrush x:Key="Panel" Color="#131217"/>       <!-- surface: cards, darker than the ground -->
+        <SolidColorBrush x:Key="PanelHi" Color="#212023"/>     <!-- raised: image tiles, hover, track -->
         <SolidColorBrush x:Key="Hover" Color="#2A292D"/>
         <SolidColorBrush x:Key="Line" Color="#222224"/>        <!-- border -->
-        <SolidColorBrush x:Key="Control" Color="#3A3A3E"/>     <!-- Rand von Eingabefeldern -->
+        <SolidColorBrush x:Key="Control" Color="#3A3A3E"/>     <!-- border of input fields -->
         <SolidColorBrush x:Key="Text" Color="#FFFFFF"/>
         <SolidColorBrush x:Key="Muted" Color="#8A8C92"/>
-        <SolidColorBrush x:Key="Accent" Color="#4A8AD6"/>      <!-- Auswahllinie, Fortschritt -->
+        <SolidColorBrush x:Key="Accent" Color="#4A8AD6"/>      <!-- selection line, progress -->
         <SolidColorBrush x:Key="PositiveLine" Color="#44A282"/>
         <SolidColorBrush x:Key="Good" Color="#5FC39C"/>        <!-- pill-positive-ink -->
         <SolidColorBrush x:Key="GoodBg" Color="#1B2828"/>      <!-- pill-positive-bg -->
@@ -24,16 +24,16 @@
         <SolidColorBrush x:Key="NeutralInk" Color="#BDBDC0"/>  <!-- pill-neutral-ink -->
         <SolidColorBrush x:Key="NeutralBg" Color="#212023"/>   <!-- pill-neutral-bg -->
 
-        <!-- Public Sans (OFL), eingebettet -->
+        <!-- Public Sans (OFL), embedded -->
         <FontFamily x:Key="UiFont">pack://application:,,,/Fonts/#Public Sans</FontFamily>
         <FontFamily x:Key="IconFont">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
 
-        <!-- Nur Ziffern gleich breit; Schrift und Farbe erben die Texte vom Fenster bzw. Steuerelement -->
+        <!-- Tabular digits only; texts inherit font and colour from the window or control -->
         <Style TargetType="TextBlock">
             <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
         </Style>
 
-        <!-- Fenster-Knöpfe: Umriss-Icons, grau, beim Überfahren hell -->
+        <!-- Window buttons: outline icons, grey, bright on hover -->
         <Style x:Key="ChromeButton" TargetType="Button">
             <Setter Property="Foreground" Value="{StaticResource Muted}"/>
             <Setter Property="Background" Value="Transparent"/>
@@ -59,7 +59,7 @@
             </Setter>
         </Style>
 
-        <!-- Klickbare Kachel / Zeile -->
+        <!-- Clickable tile / row -->
         <Style x:Key="TileButton" TargetType="Button">
             <Setter Property="Foreground" Value="{StaticResource Text}"/>
             <Setter Property="Cursor" Value="Hand"/>
@@ -83,7 +83,7 @@
             </Setter>
         </Style>
 
-        <!-- Reiter: Auswahl = 1-px-Akzentlinie genau so breit wie das Label -->
+        <!-- Tabs: selection = 1 px accent line exactly as wide as the label -->
         <Style x:Key="TabToggle" TargetType="RadioButton">
             <Setter Property="Foreground" Value="{StaticResource Muted}"/>
             <Setter Property="FontSize" Value="13"/>
@@ -115,7 +115,7 @@
             </Setter>
         </Style>
 
-        <!-- Abschnittstitel: 20/400 in Grau, Satzschreibung -->
+        <!-- Section title: 20/400 in grey, sentence case -->
         <Style x:Key="SectionTitle" TargetType="TextBlock">
             <Setter Property="Foreground" Value="{StaticResource Muted}"/>
             <Setter Property="FontFamily" Value="{StaticResource UiFont}"/>

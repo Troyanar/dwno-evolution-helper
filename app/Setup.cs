@@ -16,14 +16,15 @@ namespace DwnoEvoHelper;
 
 public enum PartState { Missing, Installed, Outdated }
 
-/// Findet das Spiel und installiert BepInEx + das eingebettete Plugin.
+/// Finds the game and installs BepInEx + the embedded plugin.
 public static class Setup
 {
     const string SteamAppId = "1530160";
     const string GameExe = "Digimon World Next Order.exe";
-    const string PluginFile = "DWNO_EvoHelfer.dll";
+    const string PluginFile = "DWNO_EvolutionHelper.dll";
+    const string LegacyPluginFile = "DWNO_EvoHelfer.dll"; // name up to 1.5
 
-    // Getestete BepInEx-Version (offizieller Build-Server)
+    // Tested BepInEx version (official build server)
     const string BepInExUrl =
         "https://builds.bepinex.dev/projects/bepinex_be/791/BepInEx-Unity.IL2CPP-win-x64-6.0.0-be.791%2Bb782da4.zip";
 
@@ -61,7 +62,7 @@ public static class Setup
             {
                 if (hive.OpenSubKey(key)?.GetValue(value) is string p && Directory.Exists(p)) roots.Add(Path.GetFullPath(p));
             }
-            catch { /* kein Zugriff */ }
+            catch { /* no access */ }
         }
 
         var libs = new List<string>(roots);
@@ -82,10 +83,11 @@ public static class Setup
     public static PartState PluginState(string game)
     {
         var path = Path.Combine(game, "BepInEx", "plugins", PluginFile);
-        if (!File.Exists(path)) return PartState.Missing;
+        if (!File.Exists(path))
+            return File.Exists(Path.Combine(game, "BepInEx", "plugins", LegacyPluginFile)) ? PartState.Outdated : PartState.Missing;
         try
         {
-            // Nach Version vergleichen: ein neueres installiertes Plugin (z. B. aus einer neueren EXE) nie herabstufen
+            // Compare by version: never downgrade a newer installed plugin (e.g. from a newer EXE)
             var installed = AssemblyName.GetAssemblyName(path).Version;
             var embedded = EmbeddedPluginVersion();
             if (installed != null && embedded != null && installed != embedded)
@@ -103,7 +105,7 @@ public static class Setup
 
     static Version? EmbeddedPluginVersion()
     {
-        var tmp = Path.Combine(Path.GetTempPath(), "dwno-evohelfer-plugin-check.dll");
+        var tmp = Path.Combine(Path.GetTempPath(), "dwno-evolution-helper-plugin-check.dll");
         try
         {
             File.WriteAllBytes(tmp, EmbeddedPlugin());
@@ -115,7 +117,7 @@ public static class Setup
         }
         finally
         {
-            try { File.Delete(tmp); } catch { /* egal */ }
+            try { File.Delete(tmp); } catch { /* doesn't matter */ }
         }
     }
 
@@ -130,7 +132,7 @@ public static class Setup
         return ms.ToArray();
     }
 
-    /// Prüft, ob wir ohne Admin-Rechte in den Spielordner schreiben dürfen.
+    /// Checks whether we may write to the game folder without admin rights.
     public static bool CanWrite(string game)
     {
         try
@@ -151,7 +153,7 @@ public static class Setup
         if (BepInExState(game) != PartState.Installed)
         {
             byte[] zip;
-            // Liegt ein BepInEx-Zip neben der EXE, wird es statt des Downloads benutzt
+            // If a BepInEx zip sits next to the EXE, it is used instead of the download
             var local = Directory.GetFiles(AppDomain.CurrentDomain.BaseDirectory, "BepInEx-Unity.IL2CPP-win-x64*.zip").FirstOrDefault();
             if (local != null)
             {
@@ -172,12 +174,15 @@ public static class Setup
         var plugins = Path.Combine(game, "BepInEx", "plugins");
         Directory.CreateDirectory(plugins);
         File.WriteAllBytes(Path.Combine(plugins, PluginFile), EmbeddedPlugin());
+        // the old plugin file would otherwise be loaded as a second plugin
+        var legacy = Path.Combine(plugins, LegacyPluginFile);
+        if (File.Exists(legacy)) File.Delete(legacy);
         HideConsole(game);
     }
 
     static string ConfigPath(string game) => Path.Combine(game, "BepInEx", "config", "BepInEx.cfg");
 
-    /// Ist das schwarze BepInEx-Konsolenfenster ausgeschaltet?
+    /// Is the black BepInEx console window turned off?
     public static bool ConsoleHidden(string game)
     {
         var cfg = ConfigPath(game);
@@ -187,8 +192,8 @@ public static class Setup
         return m.Success && m.Groups[1].Value.Equals("false", StringComparison.OrdinalIgnoreCase);
     }
 
-    /// Schaltet das BepInEx-Konsolenfenster aus. Fehlt die Konfiguration noch (vor dem ersten Spielstart),
-    /// wird sie mit nur diesem Eintrag angelegt – BepInEx ergänzt den Rest selbst.
+    /// Turns off the BepInEx console window. If the config does not exist yet (before the first game start),
+    /// it is created with just this entry – BepInEx fills in the rest itself.
     public static void HideConsole(string game)
     {
         var cfg = ConfigPath(game);
@@ -219,7 +224,7 @@ public static class Setup
         foreach (var entry in archive.Entries)
         {
             var dest = Path.GetFullPath(Path.Combine(root, entry.FullName));
-            if (!dest.StartsWith(root, StringComparison.OrdinalIgnoreCase)) continue; // kein Pfad außerhalb des Spielordners
+            if (!dest.StartsWith(root, StringComparison.OrdinalIgnoreCase)) continue; // no path outside the game folder
             if (entry.FullName.EndsWith("/"))
             {
                 Directory.CreateDirectory(dest);
@@ -232,11 +237,14 @@ public static class Setup
 
     public static void RemovePlugin(string game)
     {
-        var path = Path.Combine(game, "BepInEx", "plugins", PluginFile);
-        if (File.Exists(path)) File.Delete(path);
+        foreach (var file in new[] { PluginFile, LegacyPluginFile })
+        {
+            var path = Path.Combine(game, "BepInEx", "plugins", file);
+            if (File.Exists(path)) File.Delete(path);
+        }
     }
 
-    /// Startet die EXE erneut mit Admin-Rechten für den angegebenen Schritt und wartet darauf.
+    /// Restarts the EXE with admin rights for the given step and waits for it.
     public static async Task<bool> RunElevated(string action, string game)
     {
         try
@@ -254,7 +262,7 @@ public static class Setup
         }
         catch
         {
-            return false; // UAC abgelehnt
+            return false; // UAC declined
         }
     }
 }

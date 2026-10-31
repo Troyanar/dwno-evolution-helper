@@ -9,24 +9,24 @@ using HarmonyLib;
 
 namespace DwnoEvoHelperPlugin;
 
-[BepInPlugin("de.mario.dwno.evohelfer", "DWNO Evo-Helfer", Version)]
+[BepInPlugin("troyanar.dwno.evolutionhelper", "DWNO Evolution Helper", Version)]
 public class Plugin : BasePlugin
 {
-    public const string Version = "1.4.1";
+    public const string Version = "1.5.0";
 
     internal static ManualLogSource Logger;
 
     public override void Load()
     {
         Logger = Log;
-        new Harmony("de.mario.dwno.evohelfer").PatchAll(typeof(EvoExporter));
-        Logger.LogInfo("DWNO Evo-Helfer geladen – schreibe nach " + EvoExporter.OutDir);
+        new Harmony("troyanar.dwno.evolutionhelper").PatchAll(typeof(EvoExporter));
+        Logger.LogInfo("DWNO Evolution Helper loaded – writing to " + EvoExporter.OutDir);
     }
 }
 
-/// Liest jede Sekunde die Partnerdaten und schreibt sie für die Helfer-App als JSON.
-/// Hängt sich an AppMainScript.Update, läuft also im Unity-Hauptthread – dort dürfen
-/// Spielfunktionen gefahrlos aufgerufen werden.
+/// Reads the partner data every second and writes it as JSON for the helper app.
+/// Hooks into AppMainScript.Update, so it runs on the Unity main thread – where game
+/// functions can be called safely.
 public static class EvoExporter
 {
     public static readonly string OutDir =
@@ -43,8 +43,8 @@ public static class EvoExporter
     [HarmonyPatch(typeof(AppMainScript), nameof(AppMainScript.Update))]
     static void Update()
     {
-        // Hinweis: Das Plugin lädt bewusst keine Asset-Bundles des Spiels – ein früherer Versuch hat den
-        // Asset-Cache des Spiels beschädigt. Die Bilder liegen der App bei.
+        // Note: the plugin deliberately loads none of the game's asset bundles – an earlier attempt corrupted
+        // the game's asset cache. The images ship with the app.
 
         var now = DateTime.UtcNow;
         if (now < _next) return;
@@ -74,12 +74,12 @@ public static class EvoExporter
         catch { return ""; }
     }
 
-    /// Platzhalter-Einträge heißen "ランゲージが見つかりません！！" (Sprache nicht gefunden).
+    /// Placeholder entries are named "ランゲージが見つかりません！！" (language not found).
     internal static bool IsValidName(string name) =>
         !string.IsNullOrWhiteSpace(name) && name != ParameterDigimonData.INVALID_PARAM_NAME &&
         !name.Contains("ランゲージ") && !name.Contains("見つかりません");
 
-    // ---------- Stammdaten aller Digimon (inkl. Digitationsbedingungen) ----------
+    // ---------- Master data of all Digimon (incl. evolution conditions) ----------
 
     static bool WriteGameData(string lang)
     {
@@ -122,11 +122,11 @@ public static class EvoExporter
             ["created"] = DateTime.Now.ToString("s"),
             ["digimon"] = list,
         });
-        Plugin.Logger.LogInfo($"Digimon-Tabelle exportiert ({list.Count} Einträge, Sprache {lang})");
+        Plugin.Logger.LogInfo($"Digimon table exported ({list.Count} entries, language {lang})");
         return true;
     }
 
-    /// Icon-Code aus dem Modellnamen: "chr_a001" → "a001" (Name der Bilder in der App)
+    /// Icon code from the model name: "chr_a001" → "a001" (name of the images in the app)
     static string IconCode(string modelName)
     {
         var m = System.Text.RegularExpressions.Regex.Match(modelName ?? "", @"([a-zA-Z])(\d{3})(?!\d)");
@@ -156,7 +156,7 @@ public static class EvoExporter
         return l;
     }
 
-    // ---------- Live-Daten der Partner ----------
+    // ---------- Live data of the partners ----------
 
     static void WriteLive(string lang)
     {
@@ -202,9 +202,9 @@ public static class EvoExporter
         try { LogEvolutions(partners, root.TryGetValue("world", out var w) ? w : null); } catch (Exception e) { LogOnce("EvoLog", e); }
     }
 
-    // ---------- Digitations-Protokoll ----------
-    // Merkt sich je Partner den letzten Stand (inkl. Prüfung jeder Bedingung und Priorität des Spiels).
-    // Wechselt die Form, wird dieser Stand von direkt davor mit dem Ergebnis nach evolog.jsonl geschrieben.
+    // ---------- Evolution log ----------
+    // Remembers the last state per partner (incl. the game's check of each condition and priority).
+    // When the form changes, the state from just before is written to evolog.jsonl together with the result.
 
     static readonly Dictionary<int, Dictionary<string, object>> _lastSnapshot = new();
 
@@ -226,13 +226,13 @@ public static class EvoExporter
                 };
                 Directory.CreateDirectory(OutDir);
                 File.AppendAllText(Path.Combine(OutDir, "evolog.jsonl"), JsonSerializer.Serialize(entry, Json) + "\n");
-                Plugin.Logger.LogInfo($"Digitation protokolliert: {before["name"]} → {p["name"]}");
+                Plugin.Logger.LogInfo($"Digivolution logged: {before["name"]} → {p["name"]}");
             }
             _lastSnapshot[slot] = p;
         }
     }
 
-    /// Spieluhr: Uhrzeit, Tageszähler und wie lange eine Spielstunde in echten Sekunden dauert.
+    /// Game clock: time of day, day counter and how long one game hour lasts in real seconds.
     static Dictionary<string, object> ReadWorld()
     {
         var w = StorageData.m_worldData;
@@ -278,7 +278,7 @@ public static class EvoExporter
         };
 
         var history = new List<uint>();
-        var historyDays = new List<object>(); // wann (Jahr/Tag) der Partner welche Form erreicht hat
+        var historyDays = new List<object>(); // when (year/day) the partner reached which form
         try
         {
             var all = data.GetHistoryAll();
@@ -315,7 +315,7 @@ public static class EvoExporter
         string nickname = null;
         try { nickname = c.m_name; } catch { }
 
-        // Die Entscheidung des Spiels selbst: zu welcher Form würde der Partner jetzt digitieren?
+        // The game's own decision: which form would the partner evolve into right now?
         object choice = null;
         if (pc != null)
         {
@@ -356,13 +356,13 @@ public static class EvoExporter
         var e = new Dictionary<string, object> { ["id"] = evoId, ["name"] = name };
         if (pc == null) return e;
 
-        // Spieleigene Priorität und Prüfung (beide schon in Plugin 1.0 problemlos jede Sekunde aufgerufen)
+        // The game's own priority and check (both already called every second without issues in plugin 1.0)
         try { e["points"] = pc.EvolutionPoint(evoId); } catch (Exception ex) { LogOnce("EvolutionPoint", ex); }
         try { e["ok"] = pc.CheckEvolution(evoId); } catch (Exception ex) { LogOnce("CheckEvolution", ex); }
         try { e["enable"] = pc.IsEnableEvolution(evoId); } catch (Exception ex) { LogOnce("IsEnableEvolution", ex); }
         try { e["growthPoint"] = pc.GetGrowthEvoPoint(evoId); } catch (Exception ex) { LogOnce("GetGrowthEvoPoint", ex); }
 
-        // Pro Bedingung den Vergleich des Spiels nutzen (1 = erfüllt)
+        // Use the game's comparison for each condition (1 = met)
         var cond = Conditions(t);
         var cmp = new Dictionary<string, int>();
         foreach (var key in cond.Keys)
@@ -375,7 +375,7 @@ public static class EvoExporter
         return e;
     }
 
-    /// Einmalig prüfen, wie das Spiel Grenzfälle (Bedingung 0) bewertet.
+    /// Check once how the game evaluates edge cases (condition 0).
     static Dictionary<string, object> CompareSelfTest(PartnerCtrl pc)
     {
         var r = new Dictionary<string, object>();

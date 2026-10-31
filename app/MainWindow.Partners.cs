@@ -9,7 +9,7 @@ using System.Windows.Media;
 
 namespace DwnoEvoHelper;
 
-/// Partneransicht: ein oder beide Partner, jeweils mit eigenem Ziel-Digimon.
+/// Partner view: one or both partners, each with its own target Digimon.
 public partial class MainWindow
 {
     const int BothPartners = 2;
@@ -31,11 +31,12 @@ public partial class MainWindow
         return vm;
     }
 
-    // ---------- Texte ----------
+    // ---------- Texts ----------
 
     void ApplyTexts()
     {
-        Title = TitleText.Text = Loc.T("title");
+        TitleText.Text = Loc.T("title");
+        BuildLanguageChoices();
         Footer.Text = Loc.T("footer");
         TabBothText.Text = Loc.T("both");
         OpacityButton.ToolTip = Loc.T("tip.opacity");
@@ -56,7 +57,7 @@ public partial class MainWindow
         if (SetupView.Visibility == Visibility.Visible) RenderSetup();
     }
 
-    // ---------- Hauptansicht ----------
+    // ---------- Main view ----------
 
     void Render()
     {
@@ -70,25 +71,25 @@ public partial class MainWindow
                 : !(_live?.InGame ?? false) ? ("st.menu", "Accent")
                 : ("st.live", "Good"));
 
-        // Nur neu zeichnen, wenn sich etwas geändert hat (sonst flackern Tooltips)
+        // Only redraw when something has changed (otherwise tooltips flicker)
         var key = string.Join("|", partners.Select(p => p.Id + ":" + string.Join(",", p.Values.Select(v => v.Value)) +
                                                         ":" + string.Join(",", p.Evolutions.Select(e => e.Cmp == null ? "" : string.Join("", e.Cmp.Values)))))
                   + _partner + string.Join(",", _vms.Values.Select(v => v.Goal)) + _dataStamp + running + GameFresh() + Loc.Lang
-                  + (_live?.World is WorldInfo w ? $"{w.TotalDay}:{w.Hour}:{w.Minute / 10}" : "") + Timing.HasRate // Zeitzeile mitlaufen lassen
+                  + (_live?.World is WorldInfo w ? $"{w.TotalDay}:{w.Hour}:{w.Minute / 10}" : "") + Timing.HasRate // keep the time line updating
                   + Trainer.SessionCount;
         if (key == _lastRender) return;
         _lastRender = key;
         RenderDexDetail();
 
-        // Reiter: Name + Bild der Partner
+        // Tabs: name + image of the partners
         LivePartner? P(int slot) => partners.FirstOrDefault(p => p.Slot == slot);
-        Pic TabPic(LivePartner? p) => p != null && _data?[p.Id] is GameDigimon d ? Pic.Of(d) : new Pic { Name = p?.Name ?? "?" };
-        Tab0Text.Text = P(0)?.Name ?? Loc.F("partner", 1);
-        Tab1Text.Text = P(1)?.Name ?? Loc.F("partner", 2);
+        Pic TabPic(LivePartner? p) => p != null && _data?[p.Id] is GameDigimon d ? Pic.Of(d) : new Pic { Name = Nm(p?.Name) };
+        Tab0Text.Text = P(0) is LivePartner p0 ? Nm(p0.Name) : Loc.F("partner", 1);
+        Tab1Text.Text = P(1) is LivePartner p1 ? Nm(p1.Name) : Loc.F("partner", 2);
         Tab0Pic.Content = TabPic(P(0));
         Tab1Pic.Content = TabPic(P(1));
 
-        // Welche Partner werden gezeigt?
+        // Which partners are shown?
         var slots = _partner == BothPartners ? new[] { 0, 1 } : new[] { _partner };
         var shown = slots.Select(Vm).ToList();
         for (int i = 0; i < shown.Count; i++)
@@ -129,36 +130,37 @@ public partial class MainWindow
             return;
         }
 
-        vm.Name = partner.Name ?? "?";
-        vm.Avatar = me != null ? Pic.Of(me) : new Pic { Name = partner.Name ?? "?" };
-        // Stufenzeile: Stufe · Alter · Lebenszeit (· Stand, wenn keine Live-Daten)
+        vm.Name = Nm(partner.Name);
+        vm.Avatar = me != null ? Pic.Of(me) : new Pic { Name = Nm(partner.Name) };
+        // Stage line: stage · age · lifetime (· snapshot time, if no live data)
         var parts = new List<string> { Evaluator.Stage(partner.Growth), Loc.F("age", partner.Age) };
         if (Timing.LifeDays(partner, _live!.World) is double ld) parts.Add(Loc.F("life", ld.ToString("0.0", Loc.Culture)));
         if (!(running && GameFresh())) parts.Add(Loc.F("asof", _live.Time.ToString("t", Loc.Culture)));
-        if (partner.Nickname != null && partner.Nickname != partner.Name) parts.Add($"„{partner.Nickname}“");
+        if (partner.Nickname != null && partner.Nickname != partner.Name) parts.Add($"\"{partner.Nickname}\"");
         vm.Sub = string.Join(" · ", parts);
 
         string N(string k) => partner.Value(k).ToString("N0", Loc.Culture);
         vm.Stats = new[] { "HP", "MP", "STR", "STA", "WIS", "SPD", "weight", "mistakes", "bond", "discipline", "wins" }
             .Select(k => new Stat { Label = Evaluator.Label(k), Value = N(k.ToLowerInvariant()) }).ToList();
 
-        // Mögliche Digitationen in Spiel-Priorität
-        // Karten für alle Ziele (Bedingungen, Priorität des Spiels, Schlüssel = aktuelle Form)
+        // Possible evolutions in game priority
+        // Cards for all targets (conditions, game priority, key = current form)
         var cards = EvoRules.Cards(_data, partner, useLiveCmp: running);
         foreach (var card in cards.Where(c => c.Priority != null))
         {
             card.PriorityText = Loc.F("prio.short", card.Priority!.Value.ToString("N0", Loc.Culture));
             card.PointsTooltip = Loc.F("priority", card.Priority);
         }
-        foreach (var card in cards.Where(c => !c.Ready && _data[c.Id] != null))
+        // per-card training hints only once there are measured sessions (before that the header says "train once")
+        foreach (var card in cards.Where(c => !c.Ready && _data[c.Id] != null && Trainer.SessionCount > 0))
         {
             var train = Trainer.Describe(_data[card.Id]!, partner.Value);
             if (train != "") card.Hint += (card.Hint != "" ? "\n" : "") + train;
         }
         vm.Cards = cards;
 
-        // Der eine Befund, direkt unter dem Namen:
-        // die Entscheidung des Spiels (live), dazu die Vorhersage nach der Überschuss-Regel
+        // The one finding, right below the name:
+        // the game's decision (live), plus the prediction by the surplus rule
         var ready = cards.FirstOrDefault(c => c.Ready);
         var closest = cards.Where(c => c.Needed > 0).OrderByDescending(c => (double)c.Met / c.Needed).FirstOrDefault();
         var predicted = EvoRules.BySurplus(cards);
@@ -183,14 +185,14 @@ public partial class MainWindow
 
         vm.Finding =
             choice != null && choice.Valid
-                ? Loc.F("finding.choice", choice.Name!)
+                ? Loc.F("finding.choice", Nm(choice.Name))
                   + (predicted == null ? "" : predicted.Id == choice.Id ? " · " + Loc.T("finding.agree") : " · " + Prediction(predicted))
             : choice != null
                 ? Loc.T("finding.nochoice") + " · " + (predicted != null ? Prediction(predicted) : Closest())
             : predicted != null ? Prediction(predicted)
             : Closest();
         vm.FindingBrush = (Brush)FindResource(choice?.Valid == true || (choice == null && predicted != null) ? "Good" : "NeutralInk");
-        // Trainingsplan für das Ziel, auf das es gerade hinausläuft
+        // Training plan for the target it is currently heading towards
         var focus = predicted ?? closest;
         var focusTarget = focus != null ? _data[focus.Id] : null;
         var planText = focus != null && !focus.Ready && focusTarget != null ? Trainer.Describe(focusTarget, partner.Value) : "";
@@ -199,21 +201,54 @@ public partial class MainWindow
         if (focus != null && !focus.Ready && Trainer.SessionCount == 0 && Trainer.Need(focusTarget!, partner.Value).Any(n => n > 0))
             vm.Plan = Loc.T("train.first");
 
-        // Warnungen: Lebenszeit, Alter der Partner
+        // Warnings: lifetime, age of the partners
         var warnings = new List<string>();
         var life = Timing.LifeDays(partner, _live!.World);
         var untilEvo = Timing.DaysUntilWindow(partner);
         if (life is double ld2 && ld2 < 1) warnings.Add(Loc.T("warn.dying"));
         else if (life is double ld3 && untilEvo is int ue && ld3 < ue) warnings.Add(Loc.F("warn.life", ld3.ToString("0.0", Loc.Culture), ue));
         var other = (_live!.Partners ?? new List<LivePartner>()).FirstOrDefault(o => o.Slot != partner.Slot);
-        if (other != null && Math.Abs(other.Age - partner.Age) >= 2) warnings.Add(Loc.F("warn.agegap", Math.Abs(other.Age - partner.Age), other.Name ?? "?"));
+        if (other != null && Math.Abs(other.Age - partner.Age) >= 2) warnings.Add(Loc.F("warn.agegap", Math.Abs(other.Age - partner.Age), Nm(other.Name)));
         vm.Warning = string.Join(" · ", warnings);
 
-        // Wann digitiert er? (Tage bis zum Alters-Fenster, Zeit bis zum nächsten Tageswechsel)
+        // When does it evolve? (days until the age window, time until the next day change)
         vm.Timing = me != null && _data.Targets(me).Any() ? Timing.Describe(partner, _live!.World, ready != null) : Loc.T("timing.final");
         vm.EmptyText = cards.Count == 0 ? Loc.T(me != null ? "evo.final" : "evo.nodata") : "";
 
         RenderGoal(vm, me, partner);
+    }
+
+    /// Digimon name from the plugin (game language) → name for the current UI language
+    string Nm(string? raw) => Loc.DigimonName(raw ?? "?", _data?.Lang);
+
+    /// Language buttons in the setup screen (English is the default, "Auto" follows the game)
+    void BuildLanguageChoices()
+    {
+        LangTitle.Text = Loc.T("lang.title") + "  ·  " + Loc.T("lang.auto");
+        LangChoices.Children.Clear();
+        foreach (var (code, name) in Loc.Choices)
+        {
+            var rb = new RadioButton
+            {
+                Content = name,
+                GroupName = "lang",
+                Style = (Style)FindResource("FilterToggle"),
+                IsChecked = Loc.Choice == code,
+            };
+            rb.Checked += (_, _) =>
+            {
+                if (Loc.Choice == code) return;
+                Loc.Choice = _settings.Language = code;
+                // rebuild after the click has been handled
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    Loc.Set(_live?.Lang ?? _data?.Lang);
+                    _data?.ApplyNames();
+                    ApplyTexts();
+                }));
+            };
+            LangChoices.Children.Add(rb);
+        }
     }
 
     void SetStatus((string Text, string Brush) s)
@@ -229,7 +264,7 @@ public partial class MainWindow
         var wasBoth = _partner == BothPartners;
         _partner = i;
 
-        // Für beide Partner nebeneinander das Fenster verbreitern – und danach wieder zurück
+        // Widen the window for both partners side by side – and shrink it back afterwards
         if (i == BothPartners && !wasBoth && Width < 820)
         {
             _widthBeforeBoth = Width;
@@ -245,7 +280,7 @@ public partial class MainWindow
         if (IsLoaded) Render();
     }
 
-    // ---------- Ziel-Digimon (je Partner) ----------
+    // ---------- Target Digimon (per partner) ----------
 
     void RenderGoal(PartnerVm vm, GameDigimon? me, LivePartner? partner)
     {
@@ -269,7 +304,7 @@ public partial class MainWindow
                 pic.ArrowVisibility = i < path.Count - 1 ? Visibility.Visible : Visibility.Collapsed;
                 return pic;
             }).ToList();
-            // Für jede Stufe die Bedingungen – geprüft mit den heutigen Werten
+            // The conditions for each stage – checked against today's stats
             vm.GoalSteps = path.Skip(1)
                 .Select((step, i) => Evaluator.Build(_data, step, value,
                     new HashSet<uint>(history.Concat(path.Take(i + 1).Select(p => p.Id))), null, false))
@@ -308,7 +343,7 @@ public partial class MainWindow
             .Take(12).Select(Pic.Of).ToList();
     }
 
-    /// Die Vorschlagsliste liegt im selben StackPanel direkt unter dem Suchfeld.
+    /// The suggestion list sits in the same StackPanel directly below the search box.
     static ListBox? SuggestionList(TextBox box) =>
         ((box.Parent as FrameworkElement)?.Parent as Panel)?.Children.OfType<ListBox>().FirstOrDefault();
 
