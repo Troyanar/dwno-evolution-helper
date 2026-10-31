@@ -1,0 +1,8 @@
+DWNO Evo-Helfer
+
+This license covers the source code of this project only. It does not cover:
+
+- the Digimon names, images and game data in app/Resources (icons.zip, gamedata.json),
+  which are (c) Akiyoshi Hongo, Toei Animation and Bandai Namco Entertainment;
+- the Public Sans font files in app/Fonts, which are licensed under the
+  SIL Open Font License 1.1 (see app/Fonts/OFL.txt).

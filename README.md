@@ -47,7 +47,7 @@ dotnet build app -c Release
 
 ## Lizenz und Hinweis
 
-Der Code steht unter der [MIT-Lizenz](LICENSE).
+Der Code steht unter der [MIT-Lizenz](LICENSE); Ausnahmen siehe [NOTICE](NOTICE).
 
 Fan-Projekt, nicht mit Bandai Namco verbunden. Digimon-Namen, -Bilder und Spieldaten © Akiyoshi Hongo,
 Toei Animation, Bandai Namco Entertainment – sie fallen nicht unter die MIT-Lizenz.
