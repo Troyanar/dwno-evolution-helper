@@ -45,10 +45,13 @@ dotnet build plugin -c Release -o plugin\bin\out -p:GameDir="<Spielordner>"
 dotnet build app -c Release
 ```
 
-## Hinweis
+## Lizenz und Hinweis
 
-Fan-Projekt, nicht mit Bandai Namco verbunden. Digimon-Namen und -Bilder © Akiyoshi Hongo, Toei Animation,
-Bandai Namco Entertainment. Schrift: Public Sans (SIL Open Font License, `app/Fonts/OFL.txt`).
+Der Code steht unter der [MIT-Lizenz](LICENSE).
+
+Fan-Projekt, nicht mit Bandai Namco verbunden. Digimon-Namen, -Bilder und Spieldaten © Akiyoshi Hongo,
+Toei Animation, Bandai Namco Entertainment – sie fallen nicht unter die MIT-Lizenz.
+Schrift: Public Sans (SIL Open Font License, `app/Fonts/OFL.txt`).
 
 ---
 
