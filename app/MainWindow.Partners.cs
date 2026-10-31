@@ -47,6 +47,7 @@ public partial class MainWindow
         SetupTitle.Text = Loc.T("setup.title");
         SetupIntro.Text = Loc.T("setup.intro");
         PickButton.Content = Loc.T("setup.pick");
+        SearchButton.Content = Loc.T("setup.search");
         RemoveButton.Content = Loc.T("setup.remove");
         SetupCloseButton.Content = Loc.T("setup.close") + " →";
         ClickThroughHint.Text = Loc.T("hk.clickthrough");

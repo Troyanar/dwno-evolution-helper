@@ -43,8 +43,24 @@ public static class Setup
             var dir = Path.Combine(lib, "steamapps", "common", installDir);
             if (IsGameDir(dir)) return dir;
         }
+
+        // typical library folders on every fixed drive (Steam not registered, moved libraries, ...)
+        foreach (var drive in FixedDrives())
+        foreach (var lib in new[] { "SteamLibrary", "Steam", @"Program Files (x86)\Steam", @"Program Files\Steam",
+                                    @"Games\Steam", @"Games\SteamLibrary", @"Spiele\Steam", @"Spiele\SteamLibrary", "Games", "Spiele" })
+        {
+            foreach (var dir in new[]
+                     {
+                         Path.Combine(drive, lib, "steamapps", "common", "Digimon World Next Order"),
+                         Path.Combine(drive, lib, "Digimon World Next Order"),
+                     })
+                if (IsGameDir(dir)) return dir;
+        }
         return null;
     }
+
+    static IEnumerable<string> FixedDrives() =>
+        DriveInfo.GetDrives().Where(d => d.DriveType == DriveType.Fixed && d.IsReady).Select(d => d.RootDirectory.FullName);
 
     public static bool IsGameDir(string? dir) => dir != null && File.Exists(Path.Combine(dir, GameExe));
 

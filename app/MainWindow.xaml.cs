@@ -29,6 +29,7 @@ public partial class MainWindow : Window
         [DataMember] public int Partner { get; set; }        // 0, 1 or 2 = both
         [DataMember] public string? GameDir { get; set; }
         [DataMember] public string? Language { get; set; }   // "en" (default), "auto" or a language code
+        [DataMember] public string? LastVersion { get; set; } // for the "What's new" hint after an update
     }
 
     static readonly string SettingsPath = Path.Combine(GameFiles.Dir, "app-settings.json");
@@ -49,6 +50,7 @@ public partial class MainWindow : Window
         InitializeComponent();
         LoadSettings();
         _gameDir = Setup.FindGameDir(_settings.GameDir);
+        if (_gameDir != null) _settings.GameDir = _gameDir; // remember the folder that was found
         HideBepInExConsole();
         ApplyTexts();
         _timer.Tick += (_, _) => Refresh();
@@ -57,6 +59,8 @@ public partial class MainWindow : Window
             Refresh();
             // On first start or with an outdated plugin, show setup right away
             if (NeedsSetup()) ShowSetup(true);
+            if (_gameDir == null) StartGameSearch();
+            ShowWhatsNewHint();
             _timer.Start();
         };
         Closing += (_, _) => SaveSettings();
@@ -177,7 +181,10 @@ public partial class MainWindow : Window
             InstallButton.Visibility = RemoveButton.Visibility = Visibility.Collapsed;
         }
         SetupChecks.ItemsSource = checks;
-        SetupPath.Text = _gameDir ?? "";
+        SetupPath.Text = _searching ? Loc.T("setup.searching") : _gameDir ?? Loc.T("setup.notfoundhint");
+        SearchButton.Visibility = _gameDir == null && !_searching ? Visibility.Visible : Visibility.Collapsed;
+        ChangelogTitle.Text = Loc.T("whatsnew.title");
+        ChangelogList.ItemsSource = Changelog.Entries;
         InstallButton.IsEnabled = PickButton.IsEnabled = RemoveButton.IsEnabled = !_setupBusy;
     }
 
@@ -233,7 +240,59 @@ public partial class MainWindow : Window
         var dir = Path.GetDirectoryName(dlg.FileName);
         if (!Setup.IsGameDir(dir)) return;
         _gameDir = _settings.GameDir = dir;
+        HideBepInExConsole();
         RenderSetup();
+    }
+
+    // ---------- Finding the game folder ----------
+
+    bool _searching;
+
+    /// Checks the Steam libraries and a few typical folders per drive (fixed paths only, no scanning);
+    /// the folder that is found is saved right away.
+    async void StartGameSearch()
+    {
+        if (_searching) return;
+        _searching = true;
+        RenderSetup();
+        var found = await System.Threading.Tasks.Task.Run(() => Setup.FindGameDir(null));
+        _searching = false;
+        if (found != null)
+        {
+            _gameDir = _settings.GameDir = found;
+            SaveSettings();
+            HideBepInExConsole();
+        }
+        _lastRender = "";
+        RenderSetup();
+        if (found != null && NeedsSetup() && SetupView.Visibility != Visibility.Visible) ShowSetup(true);
+    }
+
+    void Search_Click(object sender, RoutedEventArgs e) => StartGameSearch();
+
+    // ---------- Changelog ----------
+
+    /// After an update: a "What's new" link in the title bar until it has been opened once.
+    void ShowWhatsNewHint()
+    {
+        var current = Updates.Current.ToString(3);
+        if (_settings.LastVersion == current) return;
+        // first start ever: nothing "new" to announce
+        if (_settings.LastVersion == null && !File.Exists(GameFiles.LivePath))
+        {
+            _settings.LastVersion = current;
+            return;
+        }
+        WhatsNewButton.Content = Loc.F("whatsnew.hint", current);
+        WhatsNewButton.Visibility = Visibility.Visible;
+    }
+
+    void WhatsNew_Click(object sender, RoutedEventArgs e)
+    {
+        _settings.LastVersion = Updates.Current.ToString(3);
+        WhatsNewButton.Visibility = Visibility.Collapsed;
+        ShowSetup(true);
+        ChangelogTitle.BringIntoView();
     }
 
     void Update_Click(object sender, RoutedEventArgs e)
